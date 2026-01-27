@@ -13,25 +13,42 @@ jobs:
     timeout-minutes: 5
     
     steps:
-      - name: Check Melon Ticket Availability
-        id: check
-        uses: mooyoul/melon-ticket-actions@v1.1.0
-        with:
-          product-id: 212676
-          # 當門票開售後，需要更新以下兩個 ID
-          # 請使用瀏覽器開發者工具從頁面中找出這些值
-          schedule-id: 100001  # 需要更新
-          seat-id: 1_0         # 需要更新
-          slack-incoming-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          message: '🎫 NCT DREAM 門票有貨了！快去搶票！'
-      
-      # 如果上面的 Slack webhook 格式不適用於 Discord
-      # 可以使用以下 Discord 專用的通知步驟
-      - name: Send Discord Notification
-        if: success()
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          title: '🎫 NCT DREAM 門票提醒'
-          description: '門票可能有貨了！請立即查看 Melon Ticket！'
-          url: 'https://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676'
+      - name: Check Ticket Availability
+        run: |
+          echo "正在檢查 NCT DREAM 門票狀態..."
+          
+          # 獲取頁面內容
+          response=$(curl -s "https://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676")
+          
+          # 檢查是否有 "Available Seats" 字樣
+          if echo "$response" | grep -q "Available Seats"; then
+            echo "✅ 發現可用座位！"
+            
+            # 發送 Discord 通知
+            curl -H "Content-Type: application/json" \
+              -d '{"content":"🎫 **NCT DREAM 門票提醒**\n\n門票可能有貨了！請立即查看：\nhttps://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676\n\n時間：'$(date -u)'"}' \
+              ${{ secrets.DISCORD_WEBHOOK_URL }}
+            
+            echo "📱 已發送 Discord 通知"
+          else
+            echo "❌ 暫時沒有發現可用座位"
+          fi
+          
+      - name: Check Specific Dates
+        run: |
+          echo "檢查具體場次資訊..."
+          
+          # 檢查頁面是否包含場次資訊
+          response=$(curl -s "https://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676")
+          
+          if echo "$response" | grep -q "Mar 20, 2026"; then
+            echo "✅ 找到 3月20日場次"
+          fi
+          
+          if echo "$response" | grep -q "Mar 21, 2026"; then
+            echo "✅ 找到 3月21日場次"
+          fi
+          
+          if echo "$response" | grep -q "VIP"; then
+            echo "✅ 找到 VIP 座位資訊"
+          fi
