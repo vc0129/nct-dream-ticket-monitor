@@ -1,0 +1,37 @@
+name: NCT DREAM Ticket Monitor
+
+on:
+  schedule:
+    # 每 5 分鐘檢查一次
+    - cron: '*/5 * * * *'
+  # 也可以手動觸發
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Check Melon Ticket Availability
+        id: check
+        uses: mooyoul/melon-ticket-actions@v1.1.0
+        with:
+          product-id: 212676
+          # 當門票開售後，需要更新以下兩個 ID
+          # 請使用瀏覽器開發者工具從頁面中找出這些值
+          schedule-id: 100001  # 需要更新
+          seat-id: 1_0         # 需要更新
+          slack-incoming-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          message: '🎫 NCT DREAM 門票有貨了！快去搶票！'
+      
+      # 如果上面的 Slack webhook 格式不適用於 Discord
+      # 可以使用以下 Discord 專用的通知步驟
+      - name: Send Discord Notification
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: '🎫 NCT DREAM 門票提醒'
+          description: '門票可能有貨了！請立即查看 Melon Ticket！'
+          url: 'https://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676'
