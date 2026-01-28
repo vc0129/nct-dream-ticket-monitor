@@ -13,6 +13,27 @@ jobs:
     timeout-minutes: 5
     
     steps:
+      - name: Check Specific Dates
+        run: |
+          echo "檢查具體場次資訊..."
+          
+          # 檢查頁面是否包含場次資訊
+          response=$(curl -s "https://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676")
+          
+          # 檢查是否有 3月29日 場次
+          if echo "$response" | grep -q "Mar 29, 2026"; then
+            echo "✅ 找到 3月29日場次"
+            
+            # 發送 Discord 通知
+            curl -H "Content-Type: application/json" \
+              -d '{"content":"🎫 **NCT DREAM 3月29日門票提醒**\n\n3月29日場次已出現！請立即查看：\nhttps://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676\n\n時間：'$(date -u)'"}' \
+              ${{ secrets.DISCORD_WEBHOOK_URL }}
+            
+            echo "📱 已發送 Discord 通知 - 3月29日場次"
+          else
+            echo "❌ 尚未找到 3月29日場次"
+          fi
+
       - name: Check Ticket Availability
         run: |
           echo "正在檢查 NCT DREAM 門票狀態..."
@@ -32,23 +53,4 @@ jobs:
             echo "📱 已發送 Discord 通知"
           else
             echo "❌ 暫時沒有發現可用座位"
-          fi
-          
-      - name: Check Specific Dates
-        run: |
-          echo "檢查具體場次資訊..."
-          
-          # 檢查頁面是否包含場次資訊
-          response=$(curl -s "https://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676")
-          
-          if echo "$response" | grep -q "Mar 20, 2026"; then
-            echo "✅ 找到 3月20日場次"
-          fi
-          
-          if echo "$response" | grep -q "Mar 21, 2026"; then
-            echo "✅ 找到 3月21日場次"
-          fi
-          
-          if echo "$response" | grep -q "VIP"; then
-            echo "✅ 找到 VIP 座位資訊"
           fi
