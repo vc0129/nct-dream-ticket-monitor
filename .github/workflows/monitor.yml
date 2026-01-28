@@ -13,44 +13,23 @@ jobs:
     timeout-minutes: 5
     
     steps:
-      - name: Check Specific Dates
+      - name: Check March 29 Ticket Availability
         run: |
-          echo "檢查具體場次資訊..."
-          
-          # 檢查頁面是否包含場次資訊
-          response=$(curl -s "https://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676")
-          
-          # 檢查是否有 3月29日 場次
-          if echo "$response" | grep -q "Mar 29, 2026"; then
-            echo "✅ 找到 3月29日場次"
-            
-            # 發送 Discord 通知
-            curl -H "Content-Type: application/json" \
-              -d '{"content":"🎫 **NCT DREAM 3月29日門票提醒**\n\n3月29日場次已出現！請立即查看：\nhttps://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676\n\n時間：'$(date -u)'"}' \
-              ${{ secrets.DISCORD_WEBHOOK_URL }}
-            
-            echo "📱 已發送 Discord 通知 - 3月29日場次"
-          else
-            echo "❌ 尚未找到 3月29日場次"
-          fi
-
-      - name: Check Ticket Availability
-        run: |
-          echo "正在檢查 NCT DREAM 門票狀態..."
+          echo "檢查 3月29日場次門票狀態..."
           
           # 獲取頁面內容
           response=$(curl -s "https://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676")
           
-          # 檢查是否有 "Available Seats" 字樣
-          if echo "$response" | grep -q "Available Seats"; then
-            echo "✅ 發現可用座位！"
+          # 檢查是否同時包含 "Mar 29, 2026" 和 "Available Seats"
+          if echo "$response" | grep -q "Mar 29, 2026" && echo "$response" | grep -q "Available Seats"; then
+            echo "✅ 3月29日場次有票了！"
             
             # 發送 Discord 通知
             curl -H "Content-Type: application/json" \
-              -d '{"content":"🎫 **NCT DREAM 門票提醒**\n\n門票可能有貨了！請立即查看：\nhttps://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676\n\n時間：'$(date -u)'"}' \
+              -d '{"content":"🎫 **NCT DREAM 3月29日門票提醒**\n\n✅ 3月29日場次現在有票了！請立即購買：\nhttps://tkglobal.melon.com/performance/index.htm?langCd=EN&prodId=212676\n\n時間：'$(date -u)'"}' \
               ${{ secrets.DISCORD_WEBHOOK_URL }}
             
-            echo "📱 已發送 Discord 通知"
+            echo "📱 已發送 Discord 通知 - 3月29日有票"
           else
-            echo "❌ 暫時沒有發現可用座位"
+            echo "❌ 3月29日場次目前沒有票"
           fi
